@@ -18,8 +18,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar solo la carpeta Mecanica desde el repositorio
-COPY Mecanica/ .
+# Copiar archivos del proyecto (desde el directorio actual)
+COPY . .
 
 # Instalar dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader
