@@ -83,9 +83,16 @@ class AuthController extends Controller
         $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Obtener usuario completo con perfiles
+        $userWithProfiles = User::with([
+            'roles',
+            'mechanicProfile',
+            'clientProfile'
+        ])->find($user->id);
+
         return response()->json([
             'message' => 'Inicio de sesión exitoso',
-            'user' => $user->load('roles'),
+            'user' => $userWithProfiles,
             'token' => $token,
             'token_type' => 'Bearer'
         ]);
@@ -96,8 +103,17 @@ class AuthController extends Controller
      */
     public function user(Request $request)
     {
+        $userId = $request->user()->id;
+        
+        // Obtener usuario completo con perfiles
+        $userWithProfiles = User::with([
+            'roles',
+            'mechanicProfile',
+            'clientProfile'
+        ])->find($userId);
+
         return response()->json([
-            'user' => $request->user()->load('roles')
+            'user' => $userWithProfiles
         ]);
     }
 

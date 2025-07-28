@@ -26,24 +26,16 @@ class VehicleController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->get();
             }
-            // Si es mecánico o admin, puede ver vehículos según filtros
-            elseif ($user->hasRole('mecanico') || $user->hasRole('administrador')) {
+            // Si es mecánico, puede ver vehículos según filtros (pero NO todos)
+            elseif ($user->hasRole('mecanico')) {
                 $query = Vehicle::with('user:id,name,email,phone,city,latitude,longitude');
                 
-                // Filtros opcionales
+                // Mecánicos deben especificar filtros específicos para ver vehículos
+                // NO pueden ver todos los vehículos por seguridad
                 if ($request->has('user_id')) {
+                    // Solo si se especifica un usuario específico
                     $query->where('user_id', $request->user_id);
-                }
-                
-                if ($request->has('make')) {
-                    $query->where('make', 'ILIKE', '%' . $request->make . '%');
-                }
-                
-                if ($request->has('needs_service')) {
-                    $query->needsService();
-                }
-                
-                if ($request->has('location') && $user->hasRole('mecanico')) {
+                } elseif ($request->has('location')) {
                     // Solo mostrar vehículos dentro del radio del mecánico
                     $mechanicProfile = $user->mechanicProfile;
                     if ($mechanicProfile) {
@@ -60,6 +52,40 @@ class VehicleController extends Controller
                             });
                         }
                     }
+                } else {
+                    // Si no hay filtros específicos, devolver array vacío para mecánicos
+                    return response()->json([
+                        'message' => 'Debes especificar filtros para ver vehículos (location o user_id)',
+                        'data' => []
+                    ]);
+                }
+                
+                // Filtros adicionales
+                if ($request->has('make')) {
+                    $query->where('make', 'ILIKE', '%' . $request->make . '%');
+                }
+                
+                if ($request->has('needs_service')) {
+                    $query->needsService();
+                }
+                
+                $vehicles = $query->orderBy('created_at', 'desc')->get();
+            }
+            // Solo administradores pueden ver todos los vehículos
+            elseif ($user->hasRole('administrador')) {
+                $query = Vehicle::with('user:id,name,email,phone,city,latitude,longitude');
+                
+                // Filtros opcionales para admin
+                if ($request->has('user_id')) {
+                    $query->where('user_id', $request->user_id);
+                }
+                
+                if ($request->has('make')) {
+                    $query->where('make', 'ILIKE', '%' . $request->make . '%');
+                }
+                
+                if ($request->has('needs_service')) {
+                    $query->needsService();
                 }
                 
                 $vehicles = $query->orderBy('created_at', 'desc')->get();
