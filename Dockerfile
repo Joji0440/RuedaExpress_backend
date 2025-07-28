@@ -18,8 +18,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar archivos del proyecto
-COPY . .
+# Copiar solo la carpeta Mecanica desde el repositorio
+COPY Mecanica/ .
 
 # Instalar dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader
@@ -40,5 +40,9 @@ RUN chown -R www-data:www-data /var/www/html \
 # Exponer puerto 80
 EXPOSE 80
 
-# Comando para iniciar Apache
-CMD ["apache2-foreground"]
+# Crear script de inicio que ejecute migraciones y luego Apache
+RUN echo '#!/bin/bash\nphp artisan migrate --force\napache2-foreground' > /start.sh
+RUN chmod +x /start.sh
+
+# Comando para iniciar el script
+CMD ["/start.sh"]
